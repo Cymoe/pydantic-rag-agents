@@ -1,97 +1,109 @@
 # Pydantic RAG Agents
 
-A RAG (Retrieval-Augmented Generation) system using Pydantic AI agents with MCP-based communication for automated document processing and querying.
+A collection of agents for building a Retrieval-Augmented Generation (RAG) system that processes and queries Pydantic AI documentation and business data.
 
-## Architecture
+## Features
 
-The system uses a Message Control Point (MCP) architecture for inter-agent communication:
+- **Document Crawling**: Automated crawling of Pydantic AI documentation and Google Drive documents
+- **Message Control Point (MCP) Architecture**: Efficient inter-agent communication
+- **Vector Search**: Semantic search using OpenAI embeddings and Supabase vector store
+- **RAG Expert**: AI-powered query processing and response generation
 
-```
-                     ┌─────────────────┐
-                     │  DriveWatcher   │
-                     │      MCP        │
-                     └────────┬────────┘
-                              │
-                              │ new_file
-                              ▼
-                     ┌─────────────────┐
-                     │    Document     │
-                     │   Processor     │
-                     └────────┬────────┘
-                              │
-                              │ file_processed
-                              ▼
-┌──────────────┐     ┌─────────────────┐
-│   Supabase   │◄────┤   RAG Expert    │
-│Vector Search │     │      MCP        │
-└──────────────┘     └─────────────────┘
-```
+## Components
 
-### Components
+1. **DriveWatcher Agent** (`agents/gdrive_watcher.py`):
+   - Monitors Google Drive folders for changes
+   - Processes new and modified files
+   - Integrates with MCP for notifications
 
-1. **Message Control Point (MCP)**
-   - Handles asynchronous message routing between agents
-   - Supports publish/subscribe pattern
-   - Provides message queueing and error handling
-
-2. **DriveWatcher Agent**
-   - Monitors Google Drive for file changes
-   - Publishes file events to MCP
-   - Maintains processing state
-
-3. **Document Processor**
+2. **Document Processing Agent** (`agents/crawl_gdrive_docs.py`):
    - Processes various file types (CSV, Excel, etc.)
-   - Generates embeddings for content
+   - Generates chunks and embeddings
    - Stores processed data in Supabase
 
-4. **RAG Expert**
-   - Handles user queries
-   - Uses vector search for relevant context
-   - Generates responses using OpenAI
+3. **Pydantic AI Crawler** (`agents/crawl_pydantic_ai_docs.py`):
+   - Crawls Pydantic AI documentation
+   - Processes content into searchable chunks
+   - Maintains up-to-date documentation index
 
-## Message Types
-
-1. **DriveWatcher → Document Processor**
-   - `new_file`: New file detected
-   - `update_file`: File modified
-   - `delete_file`: File removed
-
-2. **Document Processor → RAG Expert**
-   - `file_processed`: File successfully processed
-   - `file_error`: Error during processing
-
-3. **RAG Expert → UI**
-   - `query_response`: Response to user query
-   - `processing_error`: Error during query
+4. **RAG Expert Agent** (`agents/pydantic_ai_expert.py`):
+   - Handles natural language queries
+   - Performs semantic search
+   - Generates contextual responses
 
 ## Setup
 
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Cymoe/pydantic-rag-agents.git
+   cd pydantic-rag-agents
+   ```
 
-2. Set up environment variables:
-```bash
-OPENAI_API_KEY=your_key
-SUPABASE_URL=your_url
-SUPABASE_SERVICE_KEY=your_key
-GDRIVE_FOLDER_ID=your_folder_id
-```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-3. Run the system:
-```bash
-# Start the UI
-streamlit run streamlit_ui.py
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit `.env` with your:
+   - `OPENAI_API_KEY`
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_KEY`
+   - `GDRIVE_FOLDER_ID`
+   - `LLM_MODEL` (defaults to "gpt-4")
 
-# Start the watcher (in another terminal)
-python -c "from agents.gdrive_watcher import DriveWatcher; import asyncio; asyncio.run(DriveWatcher().start())"
-```
+## Usage
+
+1. Start the DriveWatcher agent:
+   ```python
+   from agents.gdrive_watcher import DriveWatcher
+   
+   watcher = DriveWatcher()
+   await watcher.start()
+   ```
+
+2. Process documents:
+   ```python
+   from agents.crawl_gdrive_docs import process_file
+   from agents.crawl_pydantic_ai_docs import crawl_pydantic_ai_docs
+   
+   # Process Google Drive files
+   await process_file(service, file_metadata)
+   
+   # Crawl Pydantic AI docs
+   await crawl_pydantic_ai_docs()
+   ```
+
+3. Query the RAG system:
+   ```python
+   from agents.pydantic_ai_expert import pydantic_ai_expert
+   
+   # Query documentation
+   response = await pydantic_ai_expert("How do I use Pydantic's Field class?", context_type="docs")
+   print(response)
+   
+   # Query business data
+   response = await pydantic_ai_expert("What were our Q4 sales?", context_type="business")
+   print(response)
+   ```
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Pydantic](https://docs.pydantic.dev/) for their excellent data validation library
+- [OpenAI](https://openai.com/) for their powerful language models and embeddings
+- [Supabase](https://supabase.com/) for their vector store capabilities
